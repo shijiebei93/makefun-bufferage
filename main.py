@@ -1,21 +1,42 @@
-"""Bufferage — entry for the make.fun Invent a Word We Need bounty.
+#!/usr/bin/env python3
+"""Bufferage — the quiet rage of watching a video freeze on the best part.
 
-Writes the coined word and its one-line definition to entry.txt.
-Deterministic, no network, no randomness.
+Deterministic, offline, standard-library only.
+Writes the entry line to /output/entry.txt (the make.fun build output
+directory) and to a local output/entry.txt next to this script, for
+verification.
 """
 
 import os
-from pathlib import Path
 
 ENTRY = "Bufferage — the quiet rage of watching a video freeze on the best part."
 
 
+def validate(text: str) -> str:
+    """The gate requires 1-140 UTF-8 characters, not only whitespace."""
+    stripped = text.strip()
+    if not stripped or len(stripped) > 140:
+        raise ValueError("entry must be 1-140 characters")
+    return stripped
+
+
 def main() -> None:
-    output_dir = Path(os.environ.get("MAKEFUN_OUTPUT_DIR", "/output"))
-    output_dir.mkdir(parents=True, exist_ok=True)
-    output_path = output_dir / "entry.txt"
-    output_path.write_text(ENTRY, encoding="utf-8")
-    print(f"Wrote {len(ENTRY)} characters to {output_path}")
+    text = validate(ENTRY) + "\n"
+    here = os.path.dirname(os.path.abspath(__file__))
+
+    # Primary build output location.
+    try:
+        os.makedirs("/output", exist_ok=True)
+        with open("/output/entry.txt", "w", encoding="utf-8") as f:
+            f.write(text)
+    except OSError:
+        pass
+
+    # Local verification copy.
+    local_out = os.path.join(here, "output")
+    os.makedirs(local_out, exist_ok=True)
+    with open(os.path.join(local_out, "entry.txt"), "w", encoding="utf-8") as f:
+        f.write(text)
 
 
 if __name__ == "__main__":
